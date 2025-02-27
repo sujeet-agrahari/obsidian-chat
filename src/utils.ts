@@ -12,8 +12,6 @@ const directoryPath = path.join(
   'Notes'
 );
 
-import { LlamaParseReader } from '@llamaindex/cloud';
-
 import {
   Document,
   VectorStoreIndex,
@@ -26,6 +24,8 @@ Settings.embedModel = new JinaAIEmbedding({
   model: 'jina-embeddings-v3',
 });
 
+Settings.chunkSize = 150; // Increase to retain more context
+Settings.chunkOverlap = 30; // Increase to avoid loss of semantic continuity
 
 let vectorStore: VectorStoreIndex | null = null;
 
@@ -48,8 +48,9 @@ export async function fetchObsContext(): Promise<VectorStoreIndex> {
   try {
     const filePaths = await readDirectoryRecursive(directoryPath);
 
-    const mdFilePaths = filePaths
-      .filter((filePath) => path.extname(filePath) === '.md');
+    const mdFilePaths = filePaths.filter(
+      (filePath) => path.extname(filePath) === '.md'
+    );
 
     const readPromises = mdFilePaths.map(async (filePath) => {
       const fileContent = await fs.promises.readFile(filePath, 'utf-8');
