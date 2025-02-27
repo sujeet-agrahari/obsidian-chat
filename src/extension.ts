@@ -1,7 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
+
 import * as vscode from 'vscode';
 import { fetchObsContext } from './utils';
+import { NodeWithScore } from 'llamaindex';
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -17,12 +19,22 @@ export function activate(context: vscode.ExtensionContext) {
     ) => {
       const userQuery = request.prompt;
       const chatModels = await vscode.lm.selectChatModels({ family: 'gpt-4' });
-      const obsidianContext = await fetchObsContext();
+      const notesVectorStore = await fetchObsContext();
+
+      // Query the index
+      const notesRetriever = notesVectorStore.asRetriever({
+        similarityTopK: 2,
+      });
+      const matches: NodeWithScore[] = await notesRetriever.retrieve({
+        query: userQuery,
+        
+      });
+      const contextNotes =  matches.map((node) => node.node.toJSON().text);
 
       const BASE_PROMPT = `
-			You should only respond to the user query based on the context: ${obsidianContext}. 
+			You should only respond to the user query based on the context: ${contextNotes.join(' \n\n')}. 
 			If the context is not relevant, please inform the user that no relevant information was found. 
-			Don't add extra information which is not there in the provided context.`;
+			Important: Don't add extra information which is not there in the provided context.`;
 
       stream.progress('Thinking...');
 
@@ -33,10 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
         (h) => h instanceof vscode.ChatResponseTurn
       );
 
-      // DEBUG: log the obsidian context
-      // let orange = vscode.window.createOutputChannel('obs');
-      // orange.show();
-      // orange.appendLine(obsidianContext);
+      //DEBUG: log the obsidian context
+      let orange = vscode.window.createOutputChannel('obs');
+      orange.show();
+      orange.appendLine(contextNotes.join(' '));
 
       // add the previous messages to the messages array
       previousMessages.forEach((m) => {
