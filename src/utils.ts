@@ -20,7 +20,7 @@ import {
 } from 'llamaindex';
 
 Settings.embedModel = new JinaAIEmbedding({
-  apiKey: 'jina_7401a5b156434936ac8cf6ed81799e2ea7-Zgsgf5JBeqOP80eWOXybHIoNU', // In Node.js defaults to process.env.HUGGINGFACEHUB_API_KEY
+  apiKey: 'Your key', // In Node.js defaults to process.env.HUGGINGFACEHUB_API_KEY
   model: 'jina-embeddings-v3',
 });
 
